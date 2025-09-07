@@ -2,6 +2,8 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / scalaVersion := "3.3.6"
 
+Compile / mainClass := Some("Main")
+
 lazy val root = (project in file("."))
   .settings(
     name := "BSDataFetcher"
@@ -14,5 +16,14 @@ libraryDependencies ++= Seq(
 
   // logging
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-  "ch.qos.logback" % "logback-classic" % "1.5.18"
+  "ch.qos.logback" % "logback-classic" % "1.5.18",
+
+  // command line args parsing
+  "com.github.scopt" %% "scopt" % "4.1.1-M3",
+
+  // Kafka and Parquet
+//  "org.apache.kafka" %% "kafka" % "3.7.0",
+  "org.apache.parquet" % "parquet-avro" % "1.16.0"
 )
+
+scalacOptions ++= Seq("-Xmax-inlines", "64")

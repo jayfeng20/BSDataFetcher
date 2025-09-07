@@ -1,0 +1,2 @@
+`model` module is responsible for defining the core data structures and types used throughout the application. It includes case classes, enumerations, and other type definitions that represent the domain model of the application.
+They are custom data structures independent of brawl stars api

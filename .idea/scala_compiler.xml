@@ -2,6 +2,12 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="BSDataFetcher,BSDataFetcher.main,BSDataFetcher.test" />
+    <profile name="sbt 1" modules="BSDataFetcher" />
+    <profile name="sbt 2" modules="BSDataFetcher.main,BSDataFetcher.test">
+      <parameters>
+        <parameter value="-Xmax-inlines" />
+        <parameter value="64" />
+      </parameters>
+    </profile>
   </component>
 </project>
