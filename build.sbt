@@ -7,5 +7,12 @@ lazy val root = (project in file("."))
     name := "BSDataFetcher"
   )
 
-// Only in dev: Enable forking of a new JVM process to run the application so environment variables are picked up
-fork := true
+libraryDependencies ++= Seq(
+  "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
+  "com.softwaremill.sttp.client3" %% "circe" % "3.11.0",
+  "io.circe" %% "circe-generic" % "0.14.14",
+
+  // logging
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
+  "ch.qos.logback" % "logback-classic" % "1.5.18"
+)

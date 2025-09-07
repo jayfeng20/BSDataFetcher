@@ -1,12 +1,17 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-@main
-def main(): Unit =
-  // TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-  // to see how IntelliJ IDEA suggests fixing it.
-  (1 to 5).map(println)
-  sys.env.get("BRAWL_STARS_API_TOKEN_THEDEAN").map(println)
+import com.typesafe.scalalogging.Logger
 
-  for (i <- 1 to 5) do
-    // TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-    // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-    println(s"i = $i")
+@main
+def main(): Unit = {
+  val logger = Logger("BSDataFetcher")
+  logger.info("Starting Brawl Stars Data Fetcher")
+
+  // Make sure a brawl stars api token is set in environment variables
+  val api_token = sys.env.get("BRAWL_STARS_API_TOKEN_THEDEAN") match {
+    case Some(token) => token
+    case None =>
+      logger.error("No brawl stars api token is found")
+      sys.exit(1)
+  }
+}
+
+
