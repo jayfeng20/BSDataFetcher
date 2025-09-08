@@ -13,7 +13,6 @@ libraryDependencies ++= Seq(
   // config
   "com.github.pureconfig" %% "pureconfig-core" % "0.17.9",
 
-
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "com.softwaremill.sttp.client3" %% "circe" % "3.11.0",
   "io.circe" %% "circe-generic" % "0.14.14",

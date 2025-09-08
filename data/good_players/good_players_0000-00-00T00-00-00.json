@@ -1,5 +1,4 @@
-{
-  "goodPlayers": [
+[
     { "tag": "#9JCGOVY8U", "lastSeen": "2025-09-07", "rating": 0 },
     { "tag": "#8V92UYCJ", "lastSeen": "2025-09-07", "rating": 0 },
     { "tag": "#2ROJLJJ9PP", "lastSeen": "2025-09-07", "rating": 0 },
@@ -10,5 +9,4 @@
     { "tag": "#22CLOOPGO", "lastSeen": "2025-09-07", "rating": 0 },
     { "tag": "#2YGU9VVRV", "lastSeen": "2025-09-07", "rating": 0 },
     { "tag": "#QLVP829R", "lastSeen": "2025-09-07", "rating": 0 }
-  ]
-}
+]

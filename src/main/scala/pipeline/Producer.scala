@@ -21,16 +21,15 @@ class Producer(config: AppConfig) {
 
   private def readGoodPlayers(filePath: String): List[GoodPlayer] =
     Try {
-      val source = Source.fromFile(filePath)
-      val lines  = source.getLines().toList
-      source.close()
-      lines.flatMap { line =>
-        decode[GoodPlayer](line) match {
-          case Right(player) => Some(player)
-          case Left(error)   =>
-            logger.error(s"Failed to parse GoodPlayer from line: $line. Error: $error")
-            None
-        }
+      val source  = Source.fromFile(filePath)
+      val content =
+        try source.mkString
+        finally source.close()
+      decode[List[GoodPlayer]](content) match {
+        case Right(players) => players
+        case Left(error)    =>
+          logger.error(s"Failed to parse GoodPlayers from file: $filePath. Error: $error")
+          List.empty[GoodPlayer]
       }
     } match {
       case Success(players)   => players

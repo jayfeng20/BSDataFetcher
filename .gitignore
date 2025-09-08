@@ -45,3 +45,9 @@ build/
 
 ### Scala ###
 .bsp/
+
+### Data ###
+/data/
+/infra/kafka_data/
+/infra/zookeeper_data/
+/infra/zookeeper_log/

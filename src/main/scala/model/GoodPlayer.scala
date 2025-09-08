@@ -10,4 +10,5 @@ package model
   * @param rating:
   *   Player's rating
   */
+
 case class GoodPlayer(tag: String, lastSeen: String, rating: Int)
