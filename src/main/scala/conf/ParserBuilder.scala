@@ -1,4 +1,4 @@
-package config
+package conf
 
 import scopt.{OParser, OParserBuilder}
 
@@ -35,8 +35,6 @@ object ParserBuilder {
         .text(
           "File path with initial good player tags (default: data/good_players/good_players_0000-00-00T00-00-00.json)"
         )
-
-      // You can add more options here later
     )
   }
 }

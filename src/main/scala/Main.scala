@@ -1,53 +1,60 @@
 import brawlstars.api
 import com.typesafe.scalalogging.Logger
-import config.ParserBuilder._
+import conf.{AppConfig, CliArgs, KafkaConfig, ParserBuilder}
+import conf.ParserBuilder.*
 import scopt.OParser
-import config.CliArgs
 import pipeline.Producer
+import pureconfig._
+import pureconfig.error._
+//import pureconfig.module.catseffect.syntax._
+import pureconfig.ConfigSource
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val logger = Logger("BSDataFetcher")
 
-    // Command line argument parsing
-    OParser.parse(parser, args, CliArgs()) match {
-      case Some(config) =>
+    val logger = Logger[this.type]
+
+    loadConfig(args) match {
+      case Right(config: AppConfig) =>
+        logger.info(s"Running mode: ${config.mode}")
         config.mode match {
           case "producer" =>
-            val producer    = new Producer(config.bsToken, config.goodPlayersFile)
-            val goodPlayers = producer.loadGoodPlayers()
-            println(s"Loaded ${goodPlayers.length} good players:")
-          //          producer.run()
-          case "consumerA" => println("ConsumerA not implemented yet")
-          case "consumerB" => println("ConsumerB not implemented yet")
-          case "consumerC" => println("ConsumerC not implemented yet")
+            val producer = new Producer(config)
+          // producer.sendGoodPlayers()
+          case other =>
+            logger.error(s"Mode not implemented: $other")
         }
-
-      case None =>
-        // arguments are bad, error message will be displayed by scopt
+      case Left(error) =>
+        logger.error(s"Configuration error: $error")
         sys.exit(1)
     }
-
-//    logger.info("Starting BSDataFetcher")
-//
-//    // Make sure a brawl stars api token is set in environment variables
-//    val api_token = sys.env.get("BRAWL_STARS_API_TOKEN_THEDEAN") match {
-//      case Some(token) => token
-//      case None =>
-//        logger.error("No brawl stars api token is found")
-//        sys.exit(1)
-//    }
-//
-//    val client = new api.BrawlStarsClient(api_token)
-//    val playerTag = "#2QQRLCGYVR"
-//    client.fetchBattleLog(playerTag) match {
-//      case Right(battleLog) =>
-//        logger.info(s"Fetched ${battleLog.items.length} battles for player $playerTag")
-//        battleLog.items.foreach { battle =>
-//          logger.info(s"Battle at ${battle.battleTime}: ${battle.battle.mode} - ${battle.battle.result}")
-//        }
-//      case Left(error) =>
-//        logger.error(error)
-//    }
   }
+
+  private def loadConfig(args: Array[String]): Either[String, AppConfig] =
+    OParser.parse(ParserBuilder.parser, args, CliArgs()) match {
+      case Some(cliArgs) if cliArgs.mode.nonEmpty && cliArgs.bsToken.nonEmpty =>
+        ConfigSource.default.at("app").load[AppConfig] match {
+          case Right(defaults: AppConfig) =>
+            val kafkaConf = defaults.kafka.copy(
+              bootstrapServers = cliArgs.bootstrapServers.getOrElse(defaults.kafka.bootstrapServers)
+            )
+            Right(
+              AppConfig(
+                mode = cliArgs.mode,
+                bsToken = cliArgs.bsToken,
+                goodPlayersFile =
+                  if cliArgs.goodPlayersFile.nonEmpty then cliArgs.goodPlayersFile
+                  else defaults.goodPlayersFile,
+                kafka = kafkaConf
+              )
+            )
+          case Left(failures) =>
+            Left(s"Failed to load application.conf: ${failures.prettyPrint()}")
+        }
+      case Some(_) =>
+        Left("Missing required arguments: mode and bsToken are required")
+      case None =>
+        Left("Invalid command-line arguments (use --help for usage)")
+    }
+
 }

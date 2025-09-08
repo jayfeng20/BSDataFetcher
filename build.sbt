@@ -10,6 +10,10 @@ lazy val root = (project in file("."))
   )
 
 libraryDependencies ++= Seq(
+  // config
+  "com.github.pureconfig" %% "pureconfig-core" % "0.17.9",
+
+
   "com.softwaremill.sttp.client3" %% "core" % "3.11.0",
   "com.softwaremill.sttp.client3" %% "circe" % "3.11.0",
   "io.circe" %% "circe-generic" % "0.14.14",
@@ -21,9 +25,14 @@ libraryDependencies ++= Seq(
   // command line args parsing
   "com.github.scopt" %% "scopt" % "4.1.1-M3",
 
-  // Kafka and Parquet
-//  "org.apache.kafka" %% "kafka" % "3.7.0",
+  // Kafka
+  "org.apache.kafka" % "kafka-clients" % "4.1.0",
+  "org.apache.kafka" % "kafka-streams" % "4.1.0",
+
+  // Parquet and Avro
   "org.apache.parquet" % "parquet-avro" % "1.16.0"
 )
 
 scalacOptions ++= Seq("-Xmax-inlines", "64")
+
+scalafmtOnCompile := true
