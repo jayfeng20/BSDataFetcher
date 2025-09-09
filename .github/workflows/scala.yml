@@ -16,7 +16,6 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -27,8 +26,13 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: 'sbt'
+    - name: Install SBT
+      run: |
+        curl -L https://github.com/sbt/sbt/releases/download/v1.10.2/sbt-1.10.2.tgz | tar -xz -C /usr/local
+        export PATH=/usr/local/sbt/bin:$PATH
+        sbt sbtVersion
     - name: Run tests
-      run: sbt test
+      run: /usr/local/sbt/bin/sbt test
       # Optional: This step uploads information to the GitHub dependency graph and unblocking Dependabot alerts for the repository
     # - name: Upload dependency graph
     #   uses: scalacenter/sbt-dependency-submission@ab086b50c947c9774b70f39fc7f6e20ca2706c91
