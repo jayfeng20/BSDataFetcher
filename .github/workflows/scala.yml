@@ -27,13 +27,6 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: 'sbt'
-    - name: Install SBT
-      uses: olafurpg/setup-scala@v17
-      with:
-        java-version: '17'
-        sbt-version: '2.5.5'
-    - name: Compile
-      run: sbt compile
     - name: Run tests
       run: sbt test
       # Optional: This step uploads information to the GitHub dependency graph and unblocking Dependabot alerts for the repository
