@@ -20,7 +20,7 @@ object Main {
         config.mode match {
           case "producer" =>
             val producer = new Producer(config)
-            producer.sendGoodPlayers()
+            producer.sendRawGoodPlayerBattleLogs()
           case other =>
             logger.error(s"Mode not implemented: $other")
         }

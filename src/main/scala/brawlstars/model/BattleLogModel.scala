@@ -12,8 +12,10 @@ object BattleLogModel {
   case class BattleResult(
     mode: GameMode,
     `type`: GameType,
-    result: GameResult,
-    duration: Int,
+    // sometimes a result is null due to server side issues - data loss
+    result: Option[GameResult],
+    // duration can be missing too, bruh
+    duration: Option[Int],
     starPlayer: Option[Player],
     teams: Option[List[List[Player]]]
   )
@@ -22,7 +24,8 @@ object BattleLogModel {
 
   case class Brawler(id: Long, name: String, power: Int, trophies: Int)
 
-  case class Event(id: Long, mode: String, map: String)
+  // mode and map can be null in some cases, TODO: find out when
+  case class Event(id: Long, mode: Option[String], map: Option[String])
 }
 
 val a = """
