@@ -26,13 +26,18 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'sbt'
 
-      - name: Set up sbt
-        uses: coursier/setup-sbt@v1
-
-      - name: Compile
-        run: sbt compile
+      - name: Install SBT
+        run: |
+          curl -L https://github.com/sbt/sbt/releases/download/v1.10.2/sbt-1.10.2.tgz | tar -xz -C $HOME
+          export PATH=$HOME/sbt/bin:$PATH
+          sbt sbtVersion
 
       - name: Run tests
-        run: sbt test
+        run: $HOME/sbt/bin/sbt test
+
+
+
+        
 
