@@ -7,13 +7,13 @@ import pureconfig.generic.derivation.default.*
   */
 
 case class AppConfig(
-  mode: String,            // Mode to run: producer | consumerA | consumerB | consumerC
-  bsToken: String,         // Brawl Stars API token
+  mode: String,            // Mode to run: producer | consumerBronze | consumerSilver | consumerGold
+  bsToken: Option[String], // Brawl Stars API token
   goodPlayersFile: String, // File path that contains good player tags and other metadata
   kafka: KafkaConfig       // Kafka configuration settings
 ) derives ConfigReader
 
-/** Holds default configuration values for the application.
+/** Holds default configuration values for the application. TODO: Add DataConfig here for dynamic file paths
   */
 case class AppConfigDefaults(
   goodPlayersFile: String, // File path that contains good player tags and other metadata

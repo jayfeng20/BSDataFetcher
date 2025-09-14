@@ -23,7 +23,7 @@ class Producer(config: AppConfig) {
   private val logger = Logger[this.type]
 
   private def createProducer: KafkaProducer[String, String] =
-    new KafkaProducer[String, String](config.kafka.toProperties)
+    new KafkaProducer[String, String](config.kafka.toProducerProperties)
 
   /** Reads good players from a JSON file.
     * @param filePath:
@@ -57,7 +57,8 @@ class Producer(config: AppConfig) {
     *   Either an error message or a list of battle logs
     */
   private def getGoodPlayerBattleLogs(goodPlayers: List[GoodPlayer]): List[Either[String, BattleLogResponse]] = {
-    val bsClient = new brawlstars.api.BrawlStarsClient(config.bsToken)
+    val bsToken  = config.bsToken.get
+    val bsClient = new brawlstars.api.BrawlStarsClient(bsToken)
     goodPlayers.map { player =>
       bsClient.fetchBattleLog(player.tag)
     }
@@ -85,7 +86,7 @@ class Producer(config: AppConfig) {
         case (tag, Right(battleLog)) =>
           val key    = tag
           val value  = battleLog.asJson.noSpaces
-          val record = new ProducerRecord[String, String](config.kafka.topic, key, value)
+          val record = new ProducerRecord[String, String](config.kafka.topicProduceTo.get, key, value)
           producer.send(
             record,
             (metadata, exception) =>
@@ -106,7 +107,7 @@ class Producer(config: AppConfig) {
     finally {
       producer.flush()
       logger.info(
-        s"Out of ${players.length} players, successfully sent ${successCounter.get()} player records to topic ${config.kafka.topic}"
+        s"Out of ${players.length} players, successfully sent ${successCounter.get()} player records to topic ${config.kafka.topicProduceTo.get}"
       )
       producer.close()
     }

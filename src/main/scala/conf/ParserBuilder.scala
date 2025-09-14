@@ -17,15 +17,14 @@ object ParserBuilder {
       opt[String]('m', "mode")
         .required()
         .validate(m =>
-          if (Set("producer", "consumerA", "consumerB", "consumerC").contains(m)) success
-          else failure("Mode must be one of: producer, consumerA, consumerB, consumerC")
+          if (Set("producer", "consumerBronze", "consumerSilver", "consumerGold").contains(m)) success
+          else failure("Mode must be one of: producer, consumerBronze, consumerSilver, consumerGold")
         )
         .action((x, c) => c.copy(mode = x))
-        .text("Mode to run: producer | consumerA | consumerB | consumerC"),
+        .text("Mode to run: producer | consumerBronze | consumerSilver | consumerGold"),
 
-      // Brawl Stars API token (required)
-      opt[String]('t', "bsToken")
-        .required()
+      // Brawl Stars API token (required if producer)
+      opt[Option[String]]('t', "bsToken")
         .action((x, c) => c.copy(bsToken = x))
         .text("Brawl Stars API token"),
 

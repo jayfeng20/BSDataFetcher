@@ -29,7 +29,23 @@ libraryDependencies ++= Seq(
   "org.apache.kafka" % "kafka-streams" % "4.1.0",
 
   // Parquet and Avro
-  "org.apache.parquet" % "parquet-avro" % "1.16.0"
+  "org.apache.parquet" % "parquet-avro" % "1.16.0",
+
+  // Spark -> needs explicit Spark dependencies because Scala 3 is not officially supported by Spark yet
+  ("org.apache.spark" %% "spark-core" % "4.0.1").cross(CrossVersion.for3Use2_13),
+  ("org.apache.spark" %% "spark-sql" % "4.0.1").cross(CrossVersion.for3Use2_13),
+
+  // https://www.reddit.com/r/scala/comments/1j2rw0p/migrating_a_codebase_to_scala_3/ -> Scala3 with Spark4
+  "io.github.vincenzobaz" %% "spark4-scala3-encoders" % "0.3.2",
+"io.github.vincenzobaz" %% "spark4-scala3-udf" % "0.3.2"
+
+)
+
+// Force Jackson 2.18.2 to ensure compatibility with Spark 4
+dependencyOverrides ++= Seq(
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.18.2",
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.18.2",
+  "com.fasterxml.jackson.core" % "jackson-annotations" % "2.18.2"
 )
 
 scalacOptions ++= Seq("-Xmax-inlines", "64")

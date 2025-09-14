@@ -4,6 +4,7 @@ enum GameResult {
   case victory
   case defeat
   case draw
+  case unknown
 }
 
 object GameResult:
@@ -28,4 +29,5 @@ object GameResult:
     case GameResult.victory => "victory"
     case GameResult.defeat  => "defeat"
     case GameResult.draw    => "draw"
+    case GameResult.unknown => "unknown"
   }

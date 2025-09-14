@@ -48,6 +48,9 @@ build/
 
 ### Data ###
 /data/goodPlayers/
+/data/bronze/
+/data/silver/
+/data/gold/
 /infra/kafka_data/
 /infra/zookeeper_data/
 /infra/zookeeper_log/
