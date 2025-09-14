@@ -10,8 +10,15 @@ import scala.io.Source
 import java.util.Properties
 import scala.util.{Failure, Success, Try}
 import io.circe.parser.decode
-import model.GoodPlayer
+import io.circe.generic.auto.*
+import model.GoodPlayerSummary
 import conf.AppConfig
+import io.circe.{Decoder, Encoder}
+
+import java.io.File
+import java.nio.file.{Files, Paths}
+import java.sql.Timestamp
+import java.time.OffsetDateTime
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Producer class to read good players from a file, fetch their battle logs, and send the raw battle logs to a Kafka
@@ -25,42 +32,78 @@ class Producer(config: AppConfig) {
   private def createProducer: KafkaProducer[String, String] =
     new KafkaProducer[String, String](config.kafka.toProducerProperties)
 
+  private case class PlayerTag(tag: String)
+
   /** Reads good players from a JSON file.
-    * @param filePath:
-    *   Path to the JSON file containing good player data
+    *
+    * @param dirPath
+    *   : Path to the JSON file containing good player data
     * @return
-    *   List[GoodPlayer]: List of good players
+    *   List[String]: List of good player tags
     */
-  private def readGoodPlayers(filePath: String): List[GoodPlayer] =
-    Try {
-      val source  = Source.fromFile(filePath)
-      val content =
-        try source.mkString
-        finally source.close()
-      decode[List[GoodPlayer]](content) match {
-        case Right(players) => players
-        case Left(error)    =>
-          logger.error(s"Failed to parse GoodPlayers from file: $filePath. Error: $error")
-          List.empty[GoodPlayer]
-      }
-    } match {
-      case Success(players)   => players
-      case Failure(exception) =>
-        logger.error(s"Failed to read good players file: $filePath", exception)
-        List.empty[GoodPlayer]
+  private def readGoodPlayers(dirPath: String): List[String] = {
+    val jsonFiles = new File(dirPath).listFiles().filter(f => f.isFile && f.getName.endsWith(".json"))
+
+    if (jsonFiles.isEmpty) {
+      logger.warn(s"No JSON files found in directory: $dirPath")
+      return List.empty
     }
 
+    jsonFiles.flatMap { file =>
+      Try {
+        val source = Source.fromFile(file)
+        try
+          source
+            .getLines()
+            .flatMap { line =>
+              decode[PlayerTag](line) match {
+                case Right(player) => Some(player.tag)
+                case Left(err)     =>
+                  logger.error(s"Failed to parse line in ${file.getAbsolutePath}: $err")
+                  None
+              }
+            }
+            .toList
+        finally source.close()
+      } match {
+        case Success(tags) => tags
+        case Failure(ex)   =>
+          logger.error(s"Failed to read file: ${file.getAbsolutePath}", ex)
+          List.empty[String]
+      }
+    }.toList
+  }
+
+  //  private def readGoodPlayers(filePath: String): List[GoodPlayerSummary] =
+//    Try {
+//      val source  = Source.fromFile(filePath)
+//      val content =
+//        try source.mkString
+//        finally source.close()
+//      decode[List[GoodPlayerSummary]](content) match {
+//        case Right(players) => players
+//        case Left(error)    =>
+//          logger.error(s"Failed to parse GoodPlayers from file: $filePath. Error: $error")
+//          List.empty[GoodPlayerSummary]
+//      }
+//    } match {
+//      case Success(players)   => players
+//      case Failure(exception) =>
+//        logger.error(s"Failed to read good players file: $filePath", exception)
+//        List.empty[GoodPlayerSummary]
+//    }
+
   /** Fetches battle logs for a list of good players.
-    * @param goodPlayers:
-    *   List of good players
+    * @param goodPlayerTags:
+    *   List of good player Tags
     * @return
     *   Either an error message or a list of battle logs
     */
-  private def getGoodPlayerBattleLogs(goodPlayers: List[GoodPlayer]): List[Either[String, BattleLogResponse]] = {
+  private def getGoodPlayerBattleLogs(goodPlayerTags: List[String]): List[Either[String, BattleLogResponse]] = {
     val bsToken  = config.bsToken.get
     val bsClient = new brawlstars.api.BrawlStarsClient(bsToken)
-    goodPlayers.map { player =>
-      bsClient.fetchBattleLog(player.tag)
+    goodPlayerTags.map { tag =>
+      bsClient.fetchBattleLog(tag)
     }
   }
 
@@ -73,12 +116,17 @@ class Producer(config: AppConfig) {
     // Atomic counter to track successful sends for logging purposes
     val successCounter = new AtomicInteger(0)
 
-    val players                      = readGoodPlayers(config.goodPlayersFile)
+    // only read from init file if primary file doesn't exist
+    // TODO: make this an app level config
+    val goodPlayersFile =
+      if Files.exists(Paths.get(config.goodPlayersFile)) then config.goodPlayersFile
+      else "data/good_players/good_players_init.json"
+
+    val players                      = readGoodPlayers(goodPlayersFile)
     val maybeRawGoodPlayerBattleLogs = getGoodPlayerBattleLogs(players)
 
     // Combine players' tags with their corresponding battle logs or errors
     val battleLogsWithTags = players
-      .map(_.tag)
       .zip(maybeRawGoodPlayerBattleLogs)
 
     try
@@ -113,3 +161,16 @@ class Producer(config: AppConfig) {
     }
   }
 }
+
+implicit val timestampDecoder: Decoder[Timestamp] =
+  Decoder.decodeString.emap { str =>
+    try
+      Right(Timestamp.valueOf(str))
+    catch {
+      case _: IllegalArgumentException =>
+        Left(s"Invalid timestamp: $str")
+    }
+  }
+
+implicit val timestampEncoder: Encoder[Timestamp] =
+  Encoder.encodeString.contramap[Timestamp](_.toString)

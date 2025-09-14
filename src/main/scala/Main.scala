@@ -2,8 +2,9 @@ import brawlstars.api
 import com.typesafe.scalalogging.Logger
 import conf.{AppConfig, AppConfigDefaults, CliArgs, KafkaConfig, ParserBuilder}
 import conf.ParserBuilder.*
+import pipeline.gpa.GPA
 import scopt.OParser
-import pipeline.{BronzeConsumer, Producer}
+import pipeline.{BronzeConsumer, Producer, SilverConsumer}
 import pureconfig.*
 import pureconfig.error.*
 //import pureconfig.module.catseffect.syntax._
@@ -28,8 +29,14 @@ object Main {
             val consumer = new BronzeConsumer(config)
             consumer.run()
           case "consumerSilver" =>
-            val consumer = new pipeline.SilverConsumer(config)
+            val consumer = new SilverConsumer(config)
             consumer.run()
+          case "GpaInit" =>
+            val gpa = new GPA(config)
+            gpa.generateInitialGoodPlayersFromSeeds()
+          case "GpaUpdate" =>
+            val gpa = new GPA(config)
+            gpa.run()
           case other =>
             logger.error(s"Mode not implemented: $other")
         }
@@ -47,28 +54,25 @@ object Main {
             val kafkaConf = defaults.kafka.copy(
               bootstrapServers = cliArgs.bootstrapServers.getOrElse(defaults.kafka.bootstrapServers),
               topicProduceTo = cliArgs.mode match {
-                case "consumerBronze" => None
-                case "consumerSilver" => None
-                case "producer"       => Some("battlelog-raw-topic")
+                case "producer" => Some("battlelog-raw-topic")
+                case other      => None
               },
               topicConsumeFrom = cliArgs.mode match {
                 case "consumerBronze" => Some("battlelog-raw-topic")
                 case "consumerSilver" => Some("battlelog-raw-topic")
-                case "producer"       => None
+                case other            => None
               },
               groupId = cliArgs.mode match {
                 case "consumerBronze" => Some("bronze-group")
                 case "consumerSilver" => Some("silver-group")
-                case "producer"       => None
+                case other            => None
               }
             )
             Right(
               AppConfig(
                 mode = cliArgs.mode,
                 bsToken = cliArgs.bsToken,
-                goodPlayersFile =
-                  if cliArgs.goodPlayersFile.nonEmpty then cliArgs.goodPlayersFile
-                  else defaults.goodPlayersFile,
+                goodPlayersFile = defaults.goodPlayersFile,
                 kafka = kafkaConf
               )
             )

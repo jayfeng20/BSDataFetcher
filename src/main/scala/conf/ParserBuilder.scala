@@ -17,23 +17,18 @@ object ParserBuilder {
       opt[String]('m', "mode")
         .required()
         .validate(m =>
-          if (Set("producer", "consumerBronze", "consumerSilver", "consumerGold").contains(m)) success
-          else failure("Mode must be one of: producer, consumerBronze, consumerSilver, consumerGold")
+          if (Set("producer", "consumerBronze", "consumerSilver", "consumerGold", "GpaInit", "GpaUpdate").contains(m))
+            success
+          else
+            failure("Mode must be one of: producer, consumerBronze, consumerSilver, consumerGold, GpaInit, GpaUpdate")
         )
         .action((x, c) => c.copy(mode = x))
-        .text("Mode to run: producer | consumerBronze | consumerSilver | consumerGold"),
+        .text("Mode to run: producer | consumerBronze | consumerSilver | consumerGold | GpaInit | GpaUpdate"),
 
       // Brawl Stars API token (required if producer)
       opt[Option[String]]('t', "bsToken")
         .action((x, c) => c.copy(bsToken = x))
-        .text("Brawl Stars API token"),
-
-      // File containing initial good player tags (optional with default)
-      opt[String]('f', "goodPlayersFile")
-        .action((x, c) => c.copy(goodPlayersFile = x))
-        .text(
-          "File path with initial good player tags (default: data/good_players/good_players_0000-00-00T00-00-00.json)"
-        )
+        .text("Brawl Stars API token")
     )
   }
 }

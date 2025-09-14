@@ -5,6 +5,16 @@
         </encoder>
     </appender>
 
+    <!-- Suppress Spark logs -->
+    <logger name="org.apache.spark" level="WARN" />
+    <logger name="org.apache.spark.sql.execution" level="WARN" />
+    <logger name="org.apache.spark.sql.streaming" level="WARN" />
+    <logger name="kafka" level="WARN" />
+
+    <!-- Your application logs -->
+    <logger name="pipeline.gpa" level="INFO" />
+
+    <!-- Root logger for everything else -->
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

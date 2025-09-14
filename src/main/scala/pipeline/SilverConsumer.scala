@@ -1,7 +1,7 @@
 package pipeline
 
 import com.typesafe.scalalogging.Logger
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types.*
 import org.apache.spark.sql.functions.{col, lit, to_date}
 import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer}
@@ -13,9 +13,7 @@ import io.circe.generic.auto.*
 
 import java.time.Instant
 import java.security.MessageDigest
-import java.util.Properties
 import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
-import java.time.ZoneOffset
 import java.io.File
 import java.sql.Timestamp
 import conf.AppConfig
@@ -38,6 +36,7 @@ case class BattleMatch(
   duration: Int,
   starPlayer: Player,
   teams: Seq[Seq[Player]],
+  perspectivePlayer: String, // NEW FIELD to track whose perspective the battle log is from
   raw: String
 )
 
@@ -73,7 +72,7 @@ class SilverConsumer(config: AppConfig) {
     md.digest(s.getBytes("UTF-8")).map("%02x".format(_)).mkString
   }
 
-  val battleTimeFormatter: DateTimeFormatter = new DateTimeFormatterBuilder()
+  private val battleTimeFormatter: DateTimeFormatter = new DateTimeFormatterBuilder()
     .appendPattern("yyyyMMdd'T'HHmmss.SSS'Z'")
     .parseDefaulting(ChronoField.OFFSET_SECONDS, 0)
     .toFormatter()
@@ -102,7 +101,21 @@ class SilverConsumer(config: AppConfig) {
 
           // read historical data (only relevant partitions)
           val existingPaths = battleDates.map(d => s"data/silver/battleDate=$d").filter(p => new java.io.File(p).exists)
-          val existingDF = if (existingPaths.nonEmpty) spark.read.parquet(existingPaths: _*) else spark.emptyDataFrame
+
+          // By default, when reading Parquet files with spark.read.parquet(), Spark infers partition columns (like battleDate) into the DataFrame schema if the partition structure is detected. However, if you’re explicitly specifying partition paths (existingPaths) and not using a base path, Spark might not infer battleDate unless explicitly configured.
+          // use mergeSchema option to handle schema evolution across partitions
+          val existingDF = if (existingPaths.nonEmpty) {
+            val basePath = "data/silver"
+            val df       = spark.read
+              .option("mergeSchema", "true") // Handle schema evolution across partitions
+              .parquet(basePath)
+              .filter(col("battleDate").isin(battleDates: _*)) // Filter for relevant dates
+            logger.info("existingDF schema:")
+            df.printSchema()
+            df
+          } else {
+            spark.createDataFrame(spark.sparkContext.emptyRDD[Row], dfWithDate.schema)
+          }
 
           // Combine, deduplicate, and overwrite
           val combinedDF =
@@ -132,7 +145,9 @@ class SilverConsumer(config: AppConfig) {
     }
 
   /** Parse a single Kafka record into BattleMatch safely */
-  private def parseRecord(record: ConsumerRecord[String, String]): Seq[BattleMatch] =
+  private def parseRecord(record: ConsumerRecord[String, String]): Seq[BattleMatch] = {
+    val perspectivePlayer = record.key()
+
     decode[BattleLogResponse](record.value()) match {
       case Right(battleLogResp) =>
         battleLogResp.items.map { battle =>
@@ -145,17 +160,20 @@ class SilverConsumer(config: AppConfig) {
             mode = battle.event.mode.getOrElse("unknown"),
             map = battle.event.map.getOrElse("unknown"),
             `type` = battle.battle.`type`.toString,
-            result = battle.battle.result.toString,
+            result = battle.battle.result.getOrElse("draw").toString,
             duration = battle.battle.duration.getOrElse(-1),
             starPlayer = battle.battle.starPlayer.getOrElse(defaultPlayer),
             teams = battle.battle.teams.getOrElse(Seq.empty),
+            perspectivePlayer = perspectivePlayer, // NEW FIELD
             raw = record.value()
           )
         }
+
       case Left(err) =>
         logger.warn(s"$LOGGER_PREFIX Failed to parse record: $err")
         Nil
     }
+  }
 
   private val defaultPlayer = Player("unknown", "unknown", Brawler(-1, "unknown", -1, -1))
 
