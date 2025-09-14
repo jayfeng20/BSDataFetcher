@@ -47,7 +47,7 @@ build/
 .bsp/
 
 ### Data ###
-/data/goodPlayers/
+/data/good_players/
 /data/bronze/
 /data/silver/
 /data/gold/
