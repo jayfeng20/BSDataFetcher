@@ -5,6 +5,7 @@ enum GameType {
   case ranked     // trophies games
   case tournament
   case friendly
+  case challenge
 }
 
 object GameType:
@@ -16,6 +17,7 @@ object GameType:
     case "ranked"     => GameType.ranked
     case "tournament" => GameType.tournament
     case "friendly"   => GameType.friendly
+    case "challenge"  => GameType.challenge
     case _            => throw new Exception(s"Unknown game type: $s")
 
   implicit val decodeGameType: Decoder[GameType] = Decoder.decodeString.emap { str =>
@@ -31,4 +33,5 @@ object GameType:
     case GameType.ranked     => "ranked"
     case GameType.tournament => "tournament"
     case GameType.friendly   => "friendly"
+    case GameType.challenge  => "challenge"
   }

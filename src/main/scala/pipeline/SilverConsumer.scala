@@ -125,10 +125,15 @@ class SilverConsumer(config: AppConfig) {
 
           try {
             // Write to Silver layer
-            dedupedDF.write
-              .mode(SaveMode.Append)
-              .partitionBy("battleDate")
-              .parquet("data/silver")
+            battleDates.foreach { someDate =>
+              val partitionDF = dedupedDF.filter($"battleDate" === someDate)
+
+              partitionDF.write
+                .mode(SaveMode.Overwrite)                            // overwrite only this partition
+                .option("replaceWhere", s"battleDate = '$someDate'") // Spark 3.0+ only
+                .partitionBy("battleDate")
+                .parquet("data/silver")
+            }
 
             // Commit Kafka offsets only after successful write
             consumer.commitSync()

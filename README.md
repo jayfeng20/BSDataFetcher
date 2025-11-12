@@ -21,9 +21,9 @@ sbt "run -m consumerSilver"
 
 Good Player Augmenter processes 
 ```bash
-sbt "run -m GpaInit"
+sbt "run -m gpaInit"
    ```
 ```bash
-sbt "run -m GpaUpdate"
+sbt "run -m gpaUpdate"
    ```
 
